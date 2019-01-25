@@ -1,20 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Christ3D.Application.Interfaces;
+using Christ3D.Application.ViewModels;
+using Christ3D.Domain.Commands;
+using Christ3D.Domain.Core.Notifications;
+using Christ3D.Domain.Models;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Christ3D.UI.Web.Controllers
 {
     public class StudentController : Controller
     {
         private readonly IStudentAppService _studentAppService;
+        IValidator<StudentViewModel> _validator;
+        private IMemoryCache _cache;
+        // 将领域通知处理程序注入Controller
+        private readonly DomainNotificationHandler _notifications;
 
-        public StudentController(IStudentAppService studentAppService)
+        public StudentController(IStudentAppService studentAppService, IMemoryCache cache, INotificationHandler<DomainNotification> notifications)
         {
             _studentAppService = studentAppService;
+            _cache = cache;
+            // 强类型转换
+            _notifications = (DomainNotificationHandler)notifications;
         }
 
         // GET: Student
@@ -30,72 +45,133 @@ namespace Christ3D.UI.Web.Controllers
         }
 
         // GET: Student/Create
+        // 页面
         public ActionResult Create()
         {
             return View();
         }
 
         // POST: Student/Create
+        // 方法
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(StudentViewModel studentViewModel)
         {
             try
             {
-                // TODO: Add insert logic here
+                //_cache.Remove("ErrorData");
+                //ViewBag.ErrorData = null;
+                // 视图模型验证
+                if (!ModelState.IsValid)
+                    return View(studentViewModel);
 
-                return RedirectToAction(nameof(Index));
+                #region 删除命令验证
+                ////添加命令验证
+                //RegisterStudentCommand registerStudentCommand = new RegisterStudentCommand(studentViewModel.Name, studentViewModel.Email, studentViewModel.BirthDate, studentViewModel.Phone);
+
+                ////如果命令无效，证明有错误
+                //if (!registerStudentCommand.IsValid())
+                //{
+                //    List<string> errorInfo = new List<string>();
+                //    //获取到错误，请思考这个Result从哪里来的 
+                //    foreach (var error in registerStudentCommand.ValidationResult.Errors)
+                //    {
+                //        errorInfo.Add(error.ErrorMessage);
+                //    }
+                //    //对错误进行记录，还需要抛给前台
+                //    ViewBag.ErrorData = errorInfo;
+                //    return View(studentViewModel);
+                //} 
+                #endregion
+
+                // 执行添加方法
+                _studentAppService.Register(studentViewModel);
+
+                //var errorData = _cache.Get("ErrorData");
+                //if (errorData == null)
+
+                // 是否存在消息通知
+                if (!_notifications.HasNotifications())
+                    ViewBag.Sucesso = "Student Registered!";
+
+                return View(studentViewModel);
             }
-            catch
+            catch (Exception e)
             {
-                return View();
+                return View(e.Message);
             }
         }
 
         // GET: Student/Edit/5
-        public ActionResult Edit(int id)
+        public IActionResult Edit(Guid? id)
         {
-            return View();
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var customerViewModel = _studentAppService.GetById(id.Value);
+
+            if (customerViewModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(customerViewModel);
         }
 
         // POST: Student/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public IActionResult Edit(StudentViewModel studentViewModel)
         {
-            try
-            {
-                // TODO: Add update logic here
+            if (!ModelState.IsValid) return View(studentViewModel);
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            _studentAppService.Update(studentViewModel);
+
+            if (!_notifications.HasNotifications())
+                ViewBag.Sucesso = "Customer Updated!";
+
+            return View(studentViewModel);
         }
 
         // GET: Student/Delete/5
-        public ActionResult Delete(int id)
+        public IActionResult Delete(Guid? id)
         {
-            return View();
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var customerViewModel = _studentAppService.GetById(id.Value);
+
+            if (customerViewModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(customerViewModel);
         }
 
         // POST: Student/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public IActionResult DeleteConfirmed(Guid id)
         {
-            try
-            {
-                // TODO: Add delete logic here
+            _studentAppService.Remove(id);
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            if (!_notifications.HasNotifications())
+                return View(_studentAppService.GetById(id));
+
+            ViewBag.Sucesso = "Customer Removed!";
+            return RedirectToAction("Index");
+        }
+
+        [Route("history/{id:guid}")]
+        public JsonResult History(Guid id)
+        {
+            var customerHistoryData = _studentAppService.GetAllHistory(id);
+            return Json(customerHistoryData);
         }
     }
 }
