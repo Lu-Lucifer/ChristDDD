@@ -2,6 +2,7 @@
 <img src="https://github.com/anjoy8/ChristDDD/blob/master/Christ3D.UI.Web/wwwroot/images/logoddd.png" width="350"  />
 
 一个基于 DDD 领域驱动设计 + CQRS 命令查询职责分离 的 .net core 框架，完全开源，并且有博客教程，地址在下边。
+本项目我是借鉴了 https://github.com/EduardoPires/EquinoxProject 来讲解的，请支持原作者！因为他没有文档，所以我就写了这个系列。
 
 
 *********************************************************
@@ -9,6 +10,48 @@
 
 ## 给个星星! ⭐️
 如果你喜欢这个项目或者它帮助你, 请给 Star~（辛苦星咯）
+
+## Tips
+
+```
+连接字符串统一在web层下的appsettings.json，
+DefaultConnection_file文件里的内容，就是DefaultConnection字符串。
+
+  /*
+    * mysql和sqlserver的迁移操作步骤一致，不过本项目的迁移文件已经迁移好，在Data文件夹下：
+    * msql使用MigrationsMySql文件夹下的迁移记录，卸载/删除另一个Migrations文件夹
+    * sqlserver使用Migrations文件夹下的迁移记录，卸载/删除另一个MigrationsMySql文件夹
+    * 
+    * 当然你也可以都删掉，自己重新做迁移。
+    * 
+    一、迁移项目1（一定要切换到 Christ3D.Infrastruct 项目下，使用 Package Manager Console）：
+      1、add-migration InitStudentDbMysql -Context StudyContext  -o MigrationsMySql
+      2、add-migration InitEventStoreDbMysql -Context EventStoreSQLContext -o MigrationsMySql/EventStore
+      3、update-database -Context StudyContext
+      4、update-database -Context EventStoreSQLContext
+    二、迁移项目2【弃用，因为现在是使用IdentityServer4】（一定要切换到 Christ3D.Infrastruct.Identity 项目下，使用 Package Manager Console）：
+      1、add-migration InitIdentityDbMysql -Context ApplicationDbContext -o Data/MigrationsMySql/ 
+      2、update-database -Context ApplicationDbContext
+
+   */
+
+```
+
+
+## 知识点
+
+#### 1、概念篇
+```
+实体对象：具有唯一标识，能单独存在且可变化的对象
+值对象：不能单独存在或在逻辑层面单独存在无意义，且不可变化的对象
+聚合：多个对象的集合，对外是一个整体
+聚合根：聚合中可代表整个业务操作的实体对象，通过它提供对外访问操作，它维护聚合内部的数据一致性，它是聚合中对象的管理者
+```
+
+#### 2、结构篇
+<img src="https://img.neters.club/github/ddd-jg.png"  />  
+（图片来源于网络）
+
 
 **********************
 三大平台同步直播

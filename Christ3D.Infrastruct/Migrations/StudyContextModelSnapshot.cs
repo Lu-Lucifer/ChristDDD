@@ -19,6 +19,38 @@ namespace Christ3D.Infrastruct.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+            modelBuilder.Entity("Christ3D.Domain.Models.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnName("Id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)")
+                        .HasMaxLength(100);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Christ3D.Domain.Models.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Name");
+
+                    b.Property<Guid?>("OrderId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems");
+                });
+
             modelBuilder.Entity("Christ3D.Domain.Models.Student", b =>
                 {
                     b.Property<Guid>("Id")
@@ -45,6 +77,13 @@ namespace Christ3D.Infrastruct.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Students");
+                });
+
+            modelBuilder.Entity("Christ3D.Domain.Models.OrderItem", b =>
+                {
+                    b.HasOne("Christ3D.Domain.Models.Order", "Order")
+                        .WithMany("OrderItem")
+                        .HasForeignKey("OrderId");
                 });
 
             modelBuilder.Entity("Christ3D.Domain.Models.Student", b =>
